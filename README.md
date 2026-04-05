@@ -1,50 +1,71 @@
-# Welcome to your Expo app 👋
+# calima monitor
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mobile app by [Club Calima](https://caliman.org) — an engineering-led startup incubator building good software
 
-## Get started
+A dead-simple Expo app that wraps our internal monitoring dashboard in a full-screen WebView. Built so collaborators can install it on their phones and check on their services from anywhere — as long as they're connected to our magic DNS
 
-1. Install dependencies
+## what's running behind it
 
-   ```bash
-   npm install
-   ```
+self hosting stack:
 
-2. Start the app
+- **[Grafana](https://grafana.com)** — dashboards for metrics and logs
+- **[Loki](https://grafana.com/oss/loki/)** — log aggregation (think: lightweight ELK alternative)
+- **[Prometheus](https://prometheus.io)** — metrics scraping and alerting
+- **[Tailscale](https://tailscale.com)** — private overlay network with magic DNS, so `monitor.your-domain.org` just works on any enrolled device without exposing anything to the public internet
 
-   ```bash
-   npx expo start
-   ```
+You can run this exact setup on a VPS or a Raspberry Pi. Check out [grafana/loki](https://github.com/grafana/loki) and the [Tailscale docs](https://tailscale.com/kb/1017/install) to get started.
 
-In the output, you'll find options to open the app in a
+## current access model
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Right now access is via **Grafana's admin credentials** — you install the app, connect to Tailscale, and log in with the admin password. Simple, works great for a small team of collaborators who already trust each other.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## what's coming
 
-## Get a fresh project
+This is intentionally minimal for now. Planned improvements:
 
-When you're ready, run:
+- **Proper auth** — Grafana SSO (OAuth/OIDC) so each person has their own account, no shared passwords
+- **Role-based access** — read-only viewers vs editors vs admins
+- **Native feel** — bottom nav between key dashboards without going through the Grafana web UI
+- **Notifications** — push alerts for critical thresholds via Grafana alerting webhooks
+
+## use this yourself
+
+You'll need:
+
+1. A Tailscale account and at least one node running your monitoring stack
+2. Your Grafana reachable via a magic DNS name (e.g. `monitor.your-domain.org`)
+3. Node.js 18+ and Expo CLI on your dev machine
 
 ```bash
-npm run reset-project
+npm install
+cp .env.example .env
+# set EXPO_PUBLIC_MONITOR_URL=http://monitor.your-domain.org in .env
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## running on device
 
-## Learn more
+This app uses `react-native-webview` (a native module) so **Expo Go won't work**. You need a development build:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+# iOS
+npx expo run:ios --device
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# Android
+npx expo run:android --device
+```
 
-## Join the community
+After the first native build, `npx expo start` is enough for hot reload during development.
 
-Join our community of developers creating universal apps.
+## project structure
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+app/(tabs)/index.tsx   ← the whole app, basically just a WebView
+app.json               ← Expo config
+.env.example           ← env var reference
+```
+
+## built with
+
+- [Expo](https://expo.dev) + [Expo Router](https://docs.expo.dev/router/introduction/)
+- [react-native-webview](https://github.com/react-native-webview/react-native-webview)
+- [Tailscale](https://tailscale.com) for private networking
